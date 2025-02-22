@@ -86,14 +86,17 @@ const UserProfileScreen = () => {
         Alert.alert('Missing Information', 'Please fill in all required fields');
         return;
       }
+
       await AsyncStorage.setItem('userProfile', JSON.stringify(profile));
-      Alert.alert('Success', 'Your profile has been saved!');
+      await AsyncStorage.setItem('isProfileComplete', 'true');
+      
+      // Navigate to home screen after successful save
+      router.replace('/home');
     } catch (error) {
       Alert.alert('Error', 'Failed to save your profile');
       console.error('Save error:', error);
     }
   };
-
   const handleSignOut = async (): Promise<void> => {
     try {
       await AsyncStorage.removeItem('userData');

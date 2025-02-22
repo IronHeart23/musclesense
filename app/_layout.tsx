@@ -2,26 +2,36 @@ import React, { useEffect, useState } from 'react';
 import { Stack } from "expo-router";
 import { ActivityIndicator, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 
 export default function RootLayout() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    checkAuthStatus();
+    checkInitialRoute();
   }, []);
 
-  const checkAuthStatus = async (): Promise<void> => {
+  const checkInitialRoute = async (): Promise<void> => {
     try {
       const userData = await AsyncStorage.getItem('userData');
-      setIsAuthenticated(!!userData);
+      const isProfileComplete = await AsyncStorage.getItem('isProfileComplete');
+
+      if (!userData) {
+        router.replace('/signin');
+      } else if (!isProfileComplete) {
+        router.replace('/');  // Go to profile setup
+      } else {
+        router.replace('/home');  // Go to home if everything is set up
+      }
     } catch (error) {
-      console.error('Auth check error:', error);
-      setIsAuthenticated(false);
+      console.error('Navigation check error:', error);
+      router.replace('/signin');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Show a loading screen while checking authentication
-  if (isAuthenticated === null) {
+  if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#e60000" />
@@ -41,15 +51,34 @@ export default function RootLayout() {
         },
       }}
     >
-      {/* Common screens */}
-      <Stack.Screen name="index" options={{ title: "MuscleSense Profile" }} />
-      
-      {/* Auth-specific screens */}
-      <Stack.Screen name="signin" options={{ 
-        title: "Sign In", 
-        headerShown: false,
-        presentation: 'modal' 
-      }} />
+      <Stack.Screen 
+        name="signin" 
+        options={{ 
+          title: "Sign In",
+          headerShown: false 
+        }} 
+      />
+      <Stack.Screen 
+        name="index" 
+        options={{ 
+          title: "Complete Your Profile",
+          headerShown: true
+        }} 
+      />
+      <Stack.Screen 
+        name="home" 
+        options={{ 
+          headerShown: false,
+          gestureEnabled: false 
+        }} 
+      />
+      <Stack.Screen 
+        name="trackers" 
+        options={{ 
+          headerShown: false,
+          presentation: 'modal'
+        }} 
+      />
     </Stack>
   );
 }
